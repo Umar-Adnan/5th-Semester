@@ -1,0 +1,66 @@
+8:51 AM 11/10/2026
+
+### Computer & Data Communication Basics
+
+* **Mainframe:** Large, high-capacity server executing thousands of concurrent user/server workloads (e.g., IBM Z series replacing 500+ standard servers).
+* **Leasing Model:** Monthly fees for hardware (CPU, RAM, peripherals); usage-based pricing for software tools (compilers, editors).
+* **Desktop Computer:** Fixed-location PC handling input, processing, output, and storage independently for a single user.
+* **Server:** System delivering shared storage, hardware, and software resources to clients.
+* **Web Server:** Delivers sites/apps via browsers.
+* **DNS Server:** Translates domain names to IP addresses.
+* **Database Server:** Manages data storage, queries, and manipulation.
+
+
+* **Data Communication Factors:** Requires accurate delivery to target, uncorrupted data integrity, and timely delivery with zero jitter (delay variation).
+* **Communication Components:** Message, Sender, Receiver, Transmission Medium, and Protocol (rules governing communication).
+* **Data Formats:**
+* **Text:** Encoded via bit patterns (ASCII, Unicode).
+* **Numbers:** Converted directly to binary (non-ASCII).
+* **Images:** Binary pixel matrices mapping color values.
+* **Audio/Video:** Continuous streams or sequential image frames.
+
+
+* **Transmission Modes:**
+* **Simplex:** One-way communication (e.g., keyboard $\rightarrow$ PC).
+* **Full-Duplex:** Simultaneous bidirectional communication over split channels.
+
+
+
+---
+
+### Network Architecture & Topologies
+
+* **Network Criteria:**
+* **Performance:** High throughput vs. lower transit/response delays.
+* **Reliability:** Frequency of failure, recovery time, and fault tolerance.
+* **Security:** Unauthorized access protection and breach recovery.
+
+
+* **Network Devices:**
+* **Host:** End-user device (PC, laptop, phone).
+* **Router:** Connects separate networks.
+* **Switch:** Interconnects nodes within a local network.
+* **Modem:** Modulates/demodulates digital and analog signals.
+
+
+* **Topologies:**
+* **Mesh:** Dedicated point-to-point links between all nodes. Robust against failures, but heavy cable overhead.
+* **Star:** All nodes connect to a central hub/switch. Easy setup, but central device is a single point of failure.
+* **Bus:** Single shared cable backbone. Low cable count, but hard to extend and main cable break downs whole network.
+* **Ring:** Nodes linked in a closed loop acting as repeaters. Easy modification, but single node failure disrupts full network.
+
+
+
+---
+
+### Network Classifications & LAN Standards
+
+* **LAN (Local Area Network):** Privately owned network (office, building, campus) operating at 1 Mbps–1 Gbps speeds.
+* **MAN (Metropolitan Area Network):** Covers 5–50 km (city-wide); owned by service providers to share regional resources.
+* **WAN (Wide Area Network):** Spans states/countries; leased from telecom providers. Formed via Point-to-Point (P2P) or Switched links.
+* **LAN Protocols:**
+* **Ethernet (CSMA/CD):** Listens to media; retransmits upon detecting collisions.
+* **LocalTalk (CSMA/CA):** Reserves channel prior to transmission to avoid collisions.
+* **Token Ring:** Passes a token sequentially (4–100 Mbps) required for transmission.
+* **FDDI:** Fiber-optic token ring running at 100 Mbps.
+* **ATM:** Switch-based star network carrying simultaneous multi-device transfers (25–600+ Mbps).

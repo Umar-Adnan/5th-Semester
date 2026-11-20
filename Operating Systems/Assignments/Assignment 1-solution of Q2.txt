@@ -1,0 +1,197 @@
++-------------------------------------------------------------------------+
+|                               USER SPACE                                |
+|                                                                         |
+|   +-----------------------------------------------------------------+   |
+|   |                       User Application                          |   |
+|   +-----------------------------------------------------------------+   |
+|                                    |                                    |
+|                                    | Calls API Function [e.g., read()]  |
+|                                    v                                    |
+|   +-----------------------------------------------------------------+   |
+|   |             Application Programming Interface (API)             |   |
+|   |                  (e.g., POSIX API / C Library)                  |   |
+|   +-----------------------------------------------------------------+   |
+|                                    |                                    |
++------------------------------------|------------------------------------+
+                                     | System Call Interface (Trap/Int 0x80)
+                                     | Sets Mode Bit: 1 -> 0
++------------------------------------|------------------------------------+
+|                                    v                        KERNEL SPACE|
+|   +-----------------------------------------------------------------+   |
+|   |                      System Call Interface                      |   |
+|   |               (Indexes System Call Table by ID)                 |   |
+|   +-----------------------------------------------------------------+   |
+|                                    |                                    |
+|                                    v                                    |
+|   +-----------------------------------------------------------------+   |
+|   |              Kernel System Call Handler (sys_read)              |   |
+|   |         Executes requested service inside Kernel Space          |   |
+|   +-----------------------------------------------------------------+   |
+|                                    |                                    |
+|                                    | Returns Result & Restores Context  |
+|                                    | Resets Mode Bit: 0 -> 1            |
++------------------------------------|------------------------------------+
+                                     v
+                           (Return to User App)
+```[cite: 1, 6]
+
+### 2. Relationship between System API & Operating System
+* **Abstraction & Portability:** An Application Programming Interface (API) provides a set of high-level function signatures (e.g., POSIX API for UNIX/Linux, Win32 API for Windows)
+ Applications invoke these standard API functions instead of invoking low-level assembly system call instructions directly[cite: 1, 6].
+* **System Call Interface Mapping:** The API function invokes the actual system call through the System Call Interface[cite: 1, 6]. 
+The interface maps the function to a specific system call number and maintains a system call table inside the kernel[cite: 1, 6].
+* **User/Kernel Mode Transition:** The System Call Interface generates a trap/software interrupt that switches the hardware CPU execution mode 
+from **User Mode (mode bit = 1)** to **Kernel Mode (mode bit = 0)**[cite: 6, 7].
+* **Execution & Return:** The kernel executes the system call handler routine in kernel space with full hardware access, writes the result to registers/buffers, and 
+returns execution to the user application, restoring User Mode (mode bit = 1)[cite: 6, 7].
+
+---
+
+## Part 2: PCB Role in Context Switching & Its Importance
+
+### 1. Diagram of Context Switching via PCB
+
+```text
+     Process P0 (Running)             Kernel / Scheduler             Process P1 (Ready)
+              |                               |                               |
+      Executes User Code                      |                               |
+              |                               |                               |
+              | --- (Interrupt / Timer) ----> |                               |
+              |                               | Interrupt Handling            |
+              |                               |                               |
+              |                     +-------------------+                     |
+              |                     | Save State into   |                     |
+              |                     |   PCB of P0       |                     |
+              |                     +-------------------+                     |
+              |                               |                               |
+              |                               | Select P1 from Ready Queue    |
+              |                               |                               |
+              |                     +-------------------+                     |
+              |                     | Load State from   |                     |
+              |                     |   PCB of P1       |                     |
+              |                     +-------------------+                     |
+              |                               |                               |
+              |                               | ----------------------------> |
+              |                               |                     Executes User Code
+              v                               v                               v
+```[cite: 9, 14]
+
+### 2. How PCB Facilitates Context Switching
+* **State Saving:** When a hardware interrupt or timer preemption occurs, the OS kernel saves the executing process's state—including CPU registers, Program Counter (PC), stack pointers, and CPU flags—directly into its Process Control Block (PCB)[cite: 9, 14].
+* **State Restoring:** The scheduler selects the next ready process, reads its PCB from memory, and restores its saved Program Counter and CPU registers into the physical hardware registers[cite: 9, 14].
+* **Seamless Execution Resume:** Once CPU registers are reloaded from the target PCB, execution jumps back to the memory location stored in the Program Counter, resuming the process exactly where it was previously suspended[cite: 9, 14].
+
+### 3. Importance for Managing Multiple Processes
+* **Enables Multitasking:** Allows the CPU to switch rapidly between multiple processes without losing operational state, creating the illusion of simultaneous program execution[cite: 6, 7].
+* **Process Isolation & Protection:** Stores process metadata (memory limits, page tables, open file descriptors, user privileges) in separate PCBs, ensuring one process cannot corrupt or alter another process's data[cite: 6, 9].
+* **Resource Management & Accounting:** Enables the kernel to maintain process states (Ready, Running, Waiting), track CPU usage times, and manage dynamic resource allocation efficiently[cite: 6, 9].
+
+---
+
+## Part 3: Interrupt-Driven I/O Cycle Diagram
+
+### 1. Architectural Diagram
+
+```text
++-------------------+                                               +-------------------+
+|    User Thread    |                                               | I/O Device Controller
++-------------------+                                               +-------------------+
+          |                                                                   |
+          |  1. Issues I/O System Call (e.g., read)                           |
+          v                                                                   |
++-------------------+         2. Initiates I/O Operation                      |
+|   Device Driver   |-------------------------------------------------------->|
++-------------------+                                                         |
+          |                                                                   | 3. Transfers data
+          | (Driver waits or CPU processes other tasks)                       |    from device to
+          |                                                                   |    local buffer
+          |                                                                   v
+          |                                                         +-------------------+
+          |                                                         |  Device Buffer    |
+          |                                                         +-------------------+
+          |                                                                   |
+          |                                   4. Raises Hardware Interrupt    |
+          |<------------------------------------------------------------------+
+          |                                   (Asserts Interrupt Line)
+          v
++-------------------+
+| Interrupt Vector  | 5. Indexes vector table to find ISR address
++-------------------+
+          |
+          v
++-------------------+
+| Interrupt Handler | 6. Transfers data from buffer to RAM; restores context
+|      (ISR)        | 7. Signals I/O completion back to User Thread
++-------------------+
+```[cite: 14]
+
+### 2. Operational Explanation of Steps
+1. **Device Driver Initialization:** The device driver initiates an I/O request by writing control registers in the hardware device controller[cite: 14].
+2. **Asynchronous Execution:** While the device controller processes physical input/output and fills its local buffer, the CPU is freed up to execute other processes[cite: 14].
+3. **Interrupt Signaled:** Upon finishing the data transfer, the device controller asserts a hardware signal on the interrupt-request line[cite: 14].
+4. **Vector Lookup & ISR Execution:** The CPU catches the interrupt signal between instruction cycles, looks up the interrupt number in the **Interrupt Vector**, and jumps to the **Interrupt Service Routine (ISR)**[cite: 14].
+5. **Completion & Resume:** The ISR transfers data from the device buffer to CPU/RAM, restores the saved CPU register context, and resumes execution of the interrupted process[cite: 14].
+
+---
+
+		  +-----------------------------------+
+                  |        MULTIPROGRAMMING           |
+                  | Primary Goal: Max CPU Efficiency  |
+                  +-----------------------------------+
+                                    |
+          +-------------------------+-------------------------+
+          |                                                   |
+   Process A running                                  Process B running
+          |                                                   |
+   Needs I/O read                                     Needs I/O read
+   (e.g., Disk access)                                (e.g., File access)
+          |                                                   |
+          +---------------------> SWAPS <---------------------+
+                       (Only switches on I/O wait)
+
+===========================================================================
+
+                  +-----------------------------------+
+                  |           MULTITASKING            |
+                  | Primary Goal: Fast Response Time  |
+                  +-----------------------------------+
+                                    |
+     +------------------------------+------------------------------+
+     |                              |                              |
+[Time Quantum: 10ms]           [Time Quantum: 10ms]           [Time Quantum: 10ms]
+     |                              |                              |
+  Process A                      Process B                      Process C
+  (Executes 10ms)               (Executes 10ms)               (Executes 10ms)
+     |                              |                              |
+     +-----------------> FORCED TIMER PREEMPTION <-----------------+
+                   (Switches automatically when time is up)
+```[cite: 2]
+
+---
+
+### 2. Side-by-Side Comparison
+
+| Feature | Multiprogramming (Batch Processing) | Multitasking (Time-Sharing) |
+| :--- | :--- | :--- |
+| **Core Objective** | **Maximize CPU Utilization**[cite: 2, 4]. Ensures the CPU is never idle while jobs are waiting in memory[cite: 2, 4]. | **Minimize Response Time**[cite: 2, 4]. Gives each user/process quick turnaround times so the system feels interactive[cite: 2, 4]. |
+| **When CPU Switches** | **Event-Driven / Non-preemptive**[cite: 2]. Switches to another process *only* when the current process must wait for an I/O operation or blocking event[cite: 2]. | **Time-Driven / Preemptive**[cite: 2]. Switches processes at fixed, tiny intervals using hardware timer interrupts (preemption)[cite: 2]. |
+| **Switching Mechanism** | **I/O Wait / Completion:** The CPU is voluntarily relinquished by a process waiting on external hardware[cite: 2]. | **Time Quantum (Time Slice):** A hardware timer expires (e.g., every 10–100 ms), forcing a context switch even if the process is busy computing[cite: 2]. |
+| **User Interaction** | **None to Low**[cite: 2, 4]. Originally designed for offline batch jobs where code and data were submitted in bulk without real-time interaction[cite: 2, 4]. | **High & Interactive**[cite: 2, 4]. Allows a user to interact with multiple applications (like a browser, text editor, and music player) simultaneously[cite: 2, 4]. |
+| **Scheduling Algorithm** | Job Scheduling, FCFS (First-Come, First-Served), or non-preemptive SJF (Shortest Job First)[cite: 2]. | Preemptive Round-Robin or Multilevel Feedback Queues[cite: 2]. |
+| **Memory Management** | Loads multiple processes into physical memory[cite: 2]. | Requires **Virtual Memory** to swap process memory rapidly and fit larger programs than physical RAM allows[cite: 2, 4]. |
+
+---
+
+### 3. Quick Viva Notes
+
+When explaining this to your examiner:
+* **Multiprogramming:** *"It keeps the CPU busy. If Process A stops to wait for disk access, the OS immediately hands the CPU to Process B."*[cite: 2]
+* **Multitasking:** *"It's time-sharing. The OS gives Process A a 10ms time slice. Once 10ms passes, a hardware timer interrupts Process A, saves its state in its PCB, and gives Process B the next 10ms."*[cite: 2]
+---
+
+### Viva Preparation Tip
+When explaining these diagrams during your viva on **17th November**[cite: 1]:
+1. Start with the **User-to-Kernel mode transition** (mode bit switching from 1 to 0) via system calls[cite: 6, 7].
+2. Explain how **PCBs** act as a "snapshot" of a process's hardware context, enabling non-destructive **Context Switching**[cite: 9, 14].
+3. Emphasize that **Interrupt-Driven I/O** eliminates CPU polling wasted cycles[cite: 14].
+4. Differentiate **Multiprogramming** (I/O-driven switching for CPU efficiency) from **Multitasking** (timer-slice-driven switching for interactive user response)[cite: 6, 7].

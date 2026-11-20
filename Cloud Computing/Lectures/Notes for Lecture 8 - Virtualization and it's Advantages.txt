@@ -1,0 +1,58 @@
+8:54 AM 11/10/2026
+### Lecture 8: Virtualization Essentials
+
+* **Definition:** The creation of a virtual (rather than physical/actual) version of a hardware platform, operating system, storage device, or network resource.
+
+
+* **Core Function:** Enables running multiple operating systems simultaneously on a single physical host machine, sharing the underlying hardware resources.
+
+
+* **Key Terminology:**
+* **Host Machine:** The underlying physical hardware/server.
+
+
+* **Hypervisor / Virtual Machine Monitor (VMM):** The virtualization software layer acting as the primary management controller/OS for the physical server.
+
+
+* **Virtual Machine (VM) / Guest OS:** Isolated, virtualized operating system instances running on top of the hypervisor.
+
+
+
+
+
+---
+
+### Hypervisor Types & Commercial Architectures
+
+* **Type-1 (Bare-Metal):** Installs directly on the bare physical hardware without an underlying host OS; highly efficient and standard for cloud data centers.
+
+
+* **Xen / XenServer:** Type-1 hypervisor based on customized Linux; managed via XenCenter console.
+
+
+* **Microsoft Hyper-V:** Type-1 hypervisor that inserts itself between hardware and OS upon enabling.
+
+
+* **VMware vSphere:** Proprietary enterprise Type-1 hypervisor widely used in private clouds.
+
+
+* **KVM (Kernel-based Virtual Machine):** Open-source Linux kernel-based hypervisor using loadable kernel modules (`kvm.ko`).
+
+
+
+
+* **Type-2 (Hosted):** Runs on top of a conventional host operating system; ideal for desktop testing environments.
+
+
+
+---
+
+### Core Advantages & Drivers
+
+* **Resource Pooling & Density:** Consolidates multiple virtual servers onto fewer physical systems, eliminating idle hardware capacity and reducing capital expenditure.
+
+
+* **Cost & Maintenance Reduction:** Decreases power consumption, physical footprint, cooling demands, and vendor hardware maintenance agreements.
+
+
+* **Operational Agility:** Enables rapid elasticity, automated server updates via VM migration, and simplified disaster recovery testing.
